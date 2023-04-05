@@ -231,9 +231,7 @@ def viterbi_a(train_filename, output_filename, trans_filename):
 
             
 
-        elif line == []:
-            ## not showing ..??
-            
+        else: 
             if tag_j not in tag_dict:
                 tag_dict[tag_j] = {"STOP": 1}
                 
