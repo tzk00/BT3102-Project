@@ -1,6 +1,6 @@
-def cal_output_probs():
-    train_data = open('twitter_train.txt', 'r', encoding = "utf-8")
-    output_probs = open('naive_output_probs.txt', 'w', encoding = "utf-8")
+def cal_output_probs(train_filename, output_filename):
+    train_data = open(train_filename, 'r', encoding = "utf-8")
+    output_probs = open(output_filename, 'w', encoding = "utf-8")
     dict_tags = {}
     dict_tokens = {}
     while True:
@@ -55,7 +55,7 @@ def cal_output_probs():
             num_of_counts_of_tag = dict_tags[x]
             cond_prob = (y + delta) / (dict_tags[x] + (num_words + 1)*delta)
             output_probs.write(f"{key} given {x} = {cond_prob:.8f}\n")
-##            print(f"P({key}|{x}) = {cond_prob:.8f}")
+            ## print(f"P({key}|{x}) = {cond_prob:.8f}")
             
 
 ##cal_output_probs()
@@ -84,7 +84,7 @@ def naive_predict(in_output_probs_filename, in_test_filename, out_prediction_fil
             else:
                 continue
 
-##    print(dict_token_tag)
+    ##print(dict_token_tag)
 
     while True:
         line2 = test_data.readline().upper().split()
@@ -194,11 +194,88 @@ def naive_predict2(in_output_probs_filename, in_train_filename, in_test_filename
     
 ##        print((given_token, best_tag))
         prediction.write(best_tag + '\n')
+        
+## naive_predict2("naive_output_probs.txt", "twitter_train.txt", "twitter_dev_no_tag.txt", "naive_predictions2.txt")
 
-naive_predict2("naive_output_probs.txt", "twitter_train.txt", "twitter_dev_no_tag.txt", "naive_predictions2.txt")
 
+
+def viterbi_a(train_filename, output_filename, trans_filename):
+    train_data = open(train_filename, 'r', encoding="utf-8")
+    #output_probs = open(output_filename, 'w', encoding="utf-8")
+    trans_probs = open(trans_filename, 'w', encoding="utf-8")
+
+    ## compute the output probabilities
+    cal_output_probs(train_filename, output_filename)
+
+    ## compute the transition probabilities
+    ## make a tag_dict -- {tag i : {tag i+1 : count}}
+    ## numerator = count, denominator = sum all values in tag i
+
+    tag_dict = {}
+    
+    tag_j = "START" ## first tag
+    
+    while True:
+        line = train_data.readline().split()
+        if line != []:
+            tag_i = tag_j
+            tag_j = line[1]
+
+            if tag_i not in tag_dict:
+                tag_dict[tag_i] = {tag_j: 1}
+            else:
+                if tag_j not in tag_dict[tag_i].keys():
+                    tag_dict[tag_i][tag_j] = 1
+                else:
+                    tag_dict[tag_i][tag_j] += 1
+
+            
+
+        elif line == []:
+            ## not showing ..??
+            
+            if tag_j not in tag_dict:
+                tag_dict[tag_j] = {"STOP": 1}
+                
+            else:
+                if "STOP" not in tag_dict[tag_j].keys():
+                    tag_dict[tag_i]["STOP"] = 1
+                else:
+                    tag_dict[tag_j]["STOP"] += 1
+
+                line2 = train_data.readline().split()
+                if line2 == []:
+                    break
+            
+                else:
+                    tag_i = "START"
+                    tag_j = line2[1]
+
+                    if "START" not in tag_dict:
+                        tag_dict["START"] = {"START": 1}
+                    else:
+                        if tag_j not in tag_dict["START"].keys():
+                            tag_dict["START"][tag_j] = 1
+                        else:
+                            tag_dict["START"][tag_j] += 1
+
+
+    ## calc each (tag_j|tag_i) w sus smoothing
+    delta = 0.1
+    
+    for currTag, tag_j_dict in tag_dict.items():
+        for nextTag, count in tag_j_dict.items():
+            numerator = count
+            denominator = sum(tag_j_dict.values())
+            num_words = len(tag_dict.keys())
+            transition_prob = (numerator + delta)/(denominator + delta*(num_words+1))
+            trans_probs.write(f"{currTag} to {nextTag} = {transition_prob:.8f}\n")
+
+
+    
 def viterbi_predict(in_tags_filename, in_trans_probs_filename, in_output_probs_filename, in_test_filename,
                     out_predictions_filename):
+    
     pass
 
 def viterbi_predict2(in_tags_filename, in_trans_probs_filename, in_output_probs_filename, in_test_filename,
