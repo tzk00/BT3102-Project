@@ -265,8 +265,8 @@ def viterbi_a(train_filename, output_filename, trans_filename):
         for nextTag, count in tag_j_dict.items():
             numerator = count
             denominator = sum(tag_j_dict.values())
-            num_words = len(tag_dict.keys())
-            transition_prob = (numerator + delta)/(denominator + delta*(num_words+1))
+            num_tags = len(tag_dict.keys())
+            transition_prob = (numerator + delta)/(denominator + delta*(num_tags+1))
             trans_probs.write(f"{currTag} to {nextTag} = {transition_prob:.8f}\n")
 
 
